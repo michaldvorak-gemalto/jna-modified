@@ -1,4 +1,15 @@
 /*
+  This is a copy of the Pointer class from JNA 5.12.1 with the following changes:
+  - the SIZE field and its initialization code is added
+  - the getString(long offset, boolean wide) method is added
+
+  This field and method existed in older JNA versions (4.4.0 and older) and the Neurotec
+  face library depends on them. This makes sure that both Neurotec (dependent on JNA
+  version <= 4.4.0) and IDV_Face library (dependent on JNA version >= 5.10.0 or thereabouts)
+  can function.
+ */
+
+/*
  * The contents of this file is dual-licensed under 2
  * alternative Open Source/Free licenses: LGPL 2.1 or later and
  * Apache License 2.0. (starting with JNA version 4.0.0).
@@ -46,6 +57,15 @@ import java.util.List;
  * @see    Function
  */
 public class Pointer {
+    /** Size of a native pointer, in bytes. */
+    public static final int SIZE;
+
+    static {
+        // Force load of native library
+        if ((SIZE = Native.POINTER_SIZE) == 0) {
+            throw new Error("Native library not initialized");
+        }
+    }
 
     /** Convenience constant, same as <code>null</code>. */
     public static final Pointer NULL = null;
@@ -657,6 +677,23 @@ public class Pointer {
     /** Read a wide (<code>const wchar_t *</code>) string from memory. */
     public String getWideString(long offset) {
         return Native.getWideString(this, this.peer, offset);
+    }
+
+    /**
+     * Copy native memory to a Java String.  If <code>wide</code> is true,
+     * access the memory as an array of <code>wchar_t</code>, otherwise
+     * as an array of <code>char</code>, using the default platform encoding.
+     *
+     * @param offset byte offset from pointer to obtain the native string
+     * @param wide whether to convert from a wide or standard C string
+     * @return the <code>String</code> value being pointed to
+     *
+     * @deprecated use {@link #getString(long,String)} or {@link
+     * #getWideString(long)} instead.
+     */
+    @Deprecated
+    public String getString(long offset, boolean wide) {
+        return wide ? getWideString(offset) : getString(offset);
     }
 
     /**
